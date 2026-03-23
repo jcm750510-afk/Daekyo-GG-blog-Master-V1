@@ -16,19 +16,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24 # 경고를 없애기 위해 최신 노드 버전 사용
+          node-version: 24
           cache: 'npm'
+
       - name: Install dependencies
         run: npm install
+
       - name: Build
+        # 이 부분이 핵심입니다! GitHub Secrets에 저장한 API 키를 빌드할 때 주입합니다.
         run: npm run build
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist' # Vite 빌드 결과물인 dist 폴더를 지정
+          path: './dist'
 
   deploy:
     environment:
