@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { TITLES_SYSTEM_INSTRUCTION, POST_SYSTEM_INSTRUCTION } from './constants';
+import { TITLES_SYSTEM_INSTRUCTION, POST_SYSTEM_INSTRUCTION, IMAGE_STYLES } from './constants';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -28,16 +28,18 @@ interface FormData {
   topic: string;
   region: string;
   postType: string;
+  imageStyle: string;
   directorRequest: string;
 }
 
 export default function App() {
   const [formData, setFormData] = useState<FormData>({
-    reader: '초등',
+    reader: '초1',
     product: '',
     topic: '',
     region: '',
     postType: '정보전달형',
+    imageStyle: '에듀케이션 일러스트',
     directorRequest: ''
   });
 
@@ -118,6 +120,7 @@ export default function App() {
         - 지역/센터명: ${formData.region}
         - 핵심 주제: ${formData.topic}
         - 포스팅 유형: ${formData.postType}
+        - 이미지 스타일: ${formData.imageStyle} (가이드라인: ${IMAGE_STYLES[formData.imageStyle as keyof typeof IMAGE_STYLES]})
         - 원장님 강조사항: ${formData.directorRequest}
       `;
 
@@ -129,7 +132,14 @@ export default function App() {
         }
       });
 
-      setBlogContent(response.text || '');
+      const generatedContent = response.text || '';
+      // Prepend the title with the specific format if it's not already there
+      const titlePrefix = `[블로그 제목 : ${title}]`;
+      const finalContent = generatedContent.includes(titlePrefix) 
+        ? generatedContent 
+        : `# ${titlePrefix}\n\n${generatedContent}`;
+
+      setBlogContent(finalContent);
       
       // Scroll to result after a short delay to allow rendering
       setTimeout(() => {
@@ -143,11 +153,31 @@ export default function App() {
     }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(blogContent).then(() => {
+  const copyToClipboard = async () => {
+    const container = resultRef.current?.querySelector('.markdown-body');
+    if (!container) return;
+
+    // To preserve the yellow highlight in blog editors (Naver, Tistory, etc.),
+    // we copy as both HTML and plain text.
+    const htmlContent = container.innerHTML;
+    
+    try {
+      const data = [
+        new ClipboardItem({
+          "text/plain": new Blob([blogContent], { type: "text/plain" }),
+          "text/html": new Blob([htmlContent], { type: "text/html" }),
+        }),
+      ];
+      await navigator.clipboard.write(data);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    } catch (err) {
+      console.error("Advanced copy failed, falling back to plain text", err);
+      navigator.clipboard.writeText(blogContent).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
   };
 
   // Custom renderer for infographic blocks
@@ -250,9 +280,19 @@ export default function App() {
                     onChange={handleInputChange}
                     className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none bg-slate-50"
                   >
-                    <option value="유아">유아 (예비초 포함)</option>
-                    <option value="초등">초등</option>
-                    <option value="중등">중등</option>
+                    <option value="영유아(3~4세)">영유아(3~4세)</option>
+                    <option value="유아(5,6세)">유아(5,6세)</option>
+                    <option value="예비초(7세)">예비초(7세)</option>
+                    <option value="초1">초1</option>
+                    <option value="초2">초2</option>
+                    <option value="초3">초3</option>
+                    <option value="초4">초4</option>
+                    <option value="초5">초5</option>
+                    <option value="초6">초6</option>
+                    <option value="중1">중1</option>
+                    <option value="중2">중2</option>
+                    <option value="중3">중3</option>
+                    <option value="고1">고1</option>
                     <option value="시니어">시니어</option>
                   </select>
                 </div>
@@ -305,6 +345,24 @@ export default function App() {
                   <option value="학원 홍보형">학원 홍보형 (센터 장점 및 관리 시스템 강조)</option>
                   <option value="학습 후기형">학습 후기형 (실제 성과 및 비포/애프터 사례)</option>
                   <option value="제품소개형">제품소개형 (눈높이/써밋 등 특정 제품 기능 강조)</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-slate-700">이미지/인포그래픽 프롬프트 스타일 선택 <span className="text-red-500">*</span></label>
+                <select 
+                  id="inputImageStyle" 
+                  value={formData.imageStyle}
+                  onChange={handleInputChange}
+                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none bg-slate-50"
+                >
+                  <option value="에듀케이션 일러스트">에듀케이션 일러스트 (Soft Storytelling)</option>
+                  <option value="플랫 디자인">플랫 디자인 (Clean & Modern Flat)</option>
+                  <option value="라인 아트 / 아이콘형">라인 아트 / 아이콘형 (Minimalist Line Art)</option>
+                  <option value="2.5D 이소메트릭">2.5D 이소메트릭 (3D Isometric Perspective)</option>
+                  <option value="인포그래픽 차트형">인포그래픽 차트형 (Data-Centric Design)</option>
+                  <option value="핸드 스케치 / 낙서풍">핸드 스케치 / 낙서풍 (Creative Doodle)</option>
+                  <option value="3D 클레이 스타일">3D 클레이 스타일 (Trendy 3D Claymorphism)</option>
                 </select>
               </div>
 
