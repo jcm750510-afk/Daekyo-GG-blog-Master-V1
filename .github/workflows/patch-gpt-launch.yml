@@ -1,0 +1,49 @@
+name: Patch GPT launch buttons
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch App.tsx
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/App.tsx')
+          s = p.read_text(encoding='utf-8')
+
+          old = """  const openPromptInChatGPT = async (prompt: string, kind: 'topics' | 'titles') => {\n    await copyText(prompt);\n    setBusy(kind);\n    window.open(`https://chatgpt.com/?q=${encodeURIComponent(prompt)}`, '_blank', 'noopener,noreferrer');\n    window.setTimeout(() => setBusy(null), 1800);\n  };"""
+          new = """  const openPromptInChatGPT = async (prompt: string, kind: 'topics' | 'titles' | 'final') => {\n    try { await copyText(prompt); } catch { /* clipboard permission may be unavailable */ }\n    setBusy(kind);\n    const chatUrl = `https://chatgpt.com/?prompt=${encodeURIComponent(prompt)}`;\n    window.open(chatUrl, '_blank', 'noopener,noreferrer');\n    window.setTimeout(() => setBusy(null), 1800);\n  };"""
+
+          if old in s:
+              s = s.replace(old, new)
+
+          old_button = """<button onClick={()=>void handleCopy(finalPrompt,'final2')} className=\"inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white\">{copied==='final2'?<Check size={16}/>:<Copy size={16}/>} GPT에 붙여넣기</button>"""
+          new_button = """<button onClick={()=>void openPromptInChatGPT(finalPrompt,'final')} className=\"inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white\">{busy==='final'?<Check size={16}/>:<ExternalLink size={16}/>} GPT에 붙여넣기</button>"""
+
+          if old_button in s:
+              s = s.replace(old_button, new_button)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit patched App.tsx
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/App.tsx
+          if git diff --cached --quiet; then
+            echo "No patch needed"
+          else
+            git commit -m "feat: launch final prompt directly in ChatGPT"
+            git push
+          fi
