@@ -1,6 +1,5 @@
 {
-  "updatedAt": "",
-  "since": "",
+  "updatedAt": "2026-09-18T05:02:44.701463+00:00",
   "notices": [],
-  "message": "GitHub Actions에서 GOOGLE_SHEET_CSV_URL을 설정하면 자동 수집됩니다."
+  "message": "GOOGLE_SHEET_CSV_URL is not configured"
 }
