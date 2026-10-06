@@ -1,0 +1,23 @@
+{
+  "name": "solruni-motion-30s",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "preview": "remotion studio src/index.ts",
+    "render:vertical": "remotion render src/index.ts SolruniVertical out/solruni-milchak-dokseo-vertical.mp4",
+    "render:horizontal": "remotion render src/index.ts SolruniHorizontal out/solruni-milchak-dokseo-horizontal.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "latest",
+    "@remotion/media-utils": "latest",
+    "remotion": "latest",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.8.0"
+  }
+}
